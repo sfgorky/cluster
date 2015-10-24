@@ -1,2 +1,3 @@
+# Ignore the unit test files - created by the cmake files
 test*.cpp
 
