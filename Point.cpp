@@ -91,23 +91,41 @@ void Point::print(FILE* p, const char* sep)const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string Point::toString( )const
+std::string Point::toString(const bool addBracket )const
 {
     std::string s;
+    
+    
+    const char* format = "%g";
+    
+    if(addBracket)
+    {
+        s += "(";
+    }
     for(size_t i=0; i<m_coordenateVector.size(); i++)
     {
         const Coord coord = m_coordenateVector[i];
         
+        if(addBracket) {
+            if(i>0) s += ", ";
+        }
+        else {
+            s += " ";
+        }
         char sBuffer[64];
-        snprintf(sBuffer,sizeof(sBuffer), "%15.10E ", coord);
+        snprintf(sBuffer,sizeof(sBuffer), format, coord);
         s += sBuffer;
+    }
+    if(addBracket)
+    {
+        s += ")";
     }
     return s;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Distance Point::distanceTo(const Point& p)const
+DistanceType Point::distanceTo(const Point& p)const
 {
     const Point::CoordVector& xCoord =   coordVector( );
     const Point::CoordVector& yCoord = p.coordVector( );
@@ -116,29 +134,20 @@ Distance Point::distanceTo(const Point& p)const
     Point::CoordVector::const_iterator c2     = yCoord.begin();
     Point::CoordVector::const_iterator c1_end = xCoord.end();
     
-    // euclidian diastance
-    /*
-     
-     for(; cpx!=cpx_end; ++cpx,++cpy)
-     {
-     Distance diff = *cpx - *cpy;
-     total += (diff * diff);
-     }
-     */
-    Distance total(0);
+    DistanceType total(0);
+    
     for(; c1!=c1_end; ++c1, ++c2)
     {
-        const Distance diff = *c1 - *c2;
+        const DistanceType diff = *c1 - *c2;
         total += (diff * diff);
     }
     total = sqrt(total);
-    
     return total;
 }
     
 ///////////////////////////////////////////////////////////////////////////////
 
-Distance Point::squareDistanceTo(const Point& p)const
+DistanceType Point::squareDistanceTo(const Point& p)const
 {
     const Point::CoordVector& xCoord =   coordVector( );
     const Point::CoordVector& yCoord = p.coordVector( );
@@ -147,10 +156,10 @@ Distance Point::squareDistanceTo(const Point& p)const
     Point::CoordVector::const_iterator c2     = yCoord.begin();
     Point::CoordVector::const_iterator c1_end = xCoord.end();
 
-    Distance total(0);
+    DistanceType total(0);
     for(; c1!=c1_end; ++c1, ++c2)
     {
-        const Distance diff(*c1 - *c2);
+        const DistanceType diff(*c1 - *c2);
         total += (diff * diff);
     }
     return total;

@@ -98,8 +98,8 @@ void computeClusterBondary(const ClusterSet&    cs,
 /// \param cid
 /// \return
 ///
-Distance computeClusterRadius(const ClusterSet& cs,
-                              const ClusterId  cid);
+DistanceType computeClusterRadius(const ClusterSet& cs,
+                                  const ClusterId  cid);
 
 
 // Computes the average distance from point pid, to all elements on cluster cid
@@ -111,9 +111,9 @@ Distance computeClusterRadius(const ClusterSet& cs,
 /// \param cid
 /// \return
 ///
-Distance computeAverageDistance(const ClusterSet& cs,
-                                const PointId&    pid,
-                                const ClusterId   cid);
+DistanceType computeAverageDistance(const ClusterSet& cs,
+                                    const PointId&    pid,
+                                    const ClusterId   cid);
 
 ///
 /// \brief computeSilhouette
@@ -148,7 +148,7 @@ double computeEnergy(const DataSet&    ds,
 /// \brief computeKMeans
 /// \param c
 ///
-void computeKMeans(ClusterSet& c);
+void computeKMeans(ClusterSet& c, const size_t nbIter, const bool printIter);
 
 
 void printClusterSynopsis(const ClusterSet& cs);

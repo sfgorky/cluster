@@ -22,6 +22,9 @@ class DataSet
     // total number of points
     size_t              size                ( )                         const ;
 
+    // dimention of first point
+    size_t              dim                 ( )                         const ;
+
     // the ith point in the data set
     const Point&        operator[]          (const size_t i)            const ;
     
@@ -34,7 +37,6 @@ class DataSet
     ///
     void                addPoint            (Point* point)                    ;
 
-    ///
     /// \brief addPointList adds a set of points to the data set. The pointer
     ///                     objects will be copied internally, and deleted at
     ///                     the dataset destructor
@@ -48,9 +50,11 @@ class DataSet
     /// \brief read the data set from a file. The file is expected to be csv,
     ///             with a point per line.
     /// \param fname filename
+    /// \param separator the line separator
     /// \return true/false.
     ///
-    bool                read                (const std::string fname)         ;
+    bool                read                (const std::string fname, 
+                                             const char* separator=",")        ;
     
 ///////////////////////////////////////////////////////////////////////////////
     private:

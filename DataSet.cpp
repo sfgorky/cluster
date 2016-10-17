@@ -37,6 +37,13 @@ size_t DataSet::size( )const
 
 ////////////////////////////////////////////////////////////////////////////////
 
+size_t DataSet::dim( )const
+{
+    return (size()>0 ? operator[](0).dim() : 0);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 const Point& DataSet::operator[](const size_t i)const
 {
     return *m_pointVector[i];
@@ -87,14 +94,14 @@ void DataSet::write(const std::string fname)const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool DataSet::read(const std::string fname)
+bool DataSet::read(const std::string fname, const char* separator)
 {
     std::fstream file;
     file.open(fname.c_str(), std::ios::in);
     if(file.is_open())
     {
         typedef boost::tokenizer< boost::char_separator<char> > Tokenizer;
-        boost::char_separator<char> sep(",");
+        boost::char_separator<char> sep(separator);
         
         std::string line;
         PointId id;

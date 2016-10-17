@@ -10,7 +10,7 @@
 typedef double Coord;
 
 // distance
-typedef double Distance;
+typedef double DistanceType;
     
 class PointId
 {
@@ -45,7 +45,7 @@ class PointId
     bool operator>(const PointId& other)const
     { return (m_idx > other.m_idx); }
     
-     PointId& operator++()
+    PointId& operator++()
     {
         m_idx++;
         return *this;
@@ -60,6 +60,7 @@ class PointId
     size_t                      m_idx                                          ;
 };
 
+////////////////////////////////////////////////////////////////////////////////
 
 // set of points
 typedef std::set<PointId> PointIdSet;
@@ -158,13 +159,13 @@ class Point
     void                        print      (FILE* p, const char* sep= " ")const;
     
     //! A string representation of the point's corrdenate.
-    std::string                 toString        ( )                      const ;
+    std::string                 toString        (const bool useBrackets = true) const ;
     
     //! Computes the distance of this point to another point
-    Distance                    distanceTo      (const Point& pt)       const ;
+    DistanceType                 distanceTo      (const Point& pt)       const ;
 
     //! distance from this point to another: (p0.x-pt.x)^2 + (p0.y-pt)^2 ...
-    Distance                    squareDistanceTo(const Point& pt)       const ;
+    DistanceType                 squareDistanceTo(const Point& pt)       const ;
     
     //! the dot product: (p0.x-pt.x) * (p0.y-pt.y) * ...
     double                      dotProduct      (const Point& pt)       const ;

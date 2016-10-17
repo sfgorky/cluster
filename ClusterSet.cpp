@@ -161,13 +161,16 @@ void ClusterSet::zero_centroids( )
 void ClusterSet::printClusters(std::string fname)const
 {
     FILE* f = fopen(fname.c_str(), "wt");
+    
+    const bool printBrackets = false;
+    
     for(ClusterId cid=0; cid<nbCluster(); cid++)
     {
         BOOST_FOREACH(const PointIdSet::value_type pid, pointsInCluster(cid))
         {
             const Point& p = point(pid);
         
-            fprintf(f, "%s %u\n", p.toString().c_str(), cid);
+            fprintf(f, "%s %u\n", p.toString(printBrackets).c_str(), cid);
         }
     }
     fclose(f);
@@ -179,10 +182,12 @@ void ClusterSet::printCentroid(std::string fname)const
 {
     FILE* f = fopen(fname.c_str(), "wt");
     
+    const bool printBrackets = false;
+
     for(ClusterId cid=0; cid<nbCluster(); cid++)
     {
         const Point& centroid = getCentroid(cid);
-        fprintf(f, "%s %u\n", centroid.toString().c_str(), cid);
+        fprintf(f, "%s %u\n", centroid.toString(printBrackets).c_str(), cid);
     }
     fclose(f);
 }
@@ -251,7 +256,7 @@ size_t ClusterSet::clusterSize(const ClusterId cid)const
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Compute Centroids
+// Compute Centroids FOR EACH CLUSTER
 void ClusterSet::compute_centroids( )
 {
     // For ech centroid
@@ -309,11 +314,13 @@ void ClusterSet::initial_partition_points(InitMethod method)
     {
         int nbCluster = m_nb_cluster;
         
+        fprintf(stdout, "initialPartition: nbCluster: %d, nbPts: %ld\n", nbCluster, nbPoints());
         // Clear the vector
         for(size_t idx=0; idx<nbPoints(); idx++)
         {
             ClusterId cid = intRandomValue(nbCluster);
             addPointToCluster(point(idx), cid);
+            // fprintf(stdout, "[%ld] point %s to cluster %d\n", idx, point(idx).toString().c_str(), cid);
         }
     }
     else
@@ -341,11 +348,11 @@ void ClusterSet::initial_partition_points(InitMethod method)
             const Point& p = point(pid);
             
             // find closer centroid
-            Distance min_dist = 1e38;
+            DistanceType min_dist = 1e38;
             ClusterId closestCentroid = 0;
             for(ClusterId cid=0; cid<nbCluster(); cid++)
             {
-                Distance dist = p.distanceTo(getCentroid(cid));
+                DistanceType dist = p.distanceTo(getCentroid(cid));
                 
                 if(dist < min_dist)
                 {

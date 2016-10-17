@@ -80,6 +80,7 @@ void writeClusterPointIdFile(const DataSet&    ds,
                              const std::string fname,
                              bool              bVerbose)
 {
+    const bool addBracket(false);
     std::ofstream file;
     file.open(fname.c_str(), std::ios::out);
     if(file.is_open())
@@ -90,7 +91,7 @@ void writeClusterPointIdFile(const DataSet&    ds,
         
         BOOST_FOREACH(const PointIdSet::value_type pid, pointSet)
         {
-            file << ds[pid.value()].toString() << std::endl;
+            file << ds[pid.value()].toString(addBracket) << std::endl;
         }
     }
 }
@@ -136,17 +137,17 @@ void clustersCreatePlots(const ClusterSet& cs,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Distance computeClusterRadius(const ClusterSet& cs,
-                              const ClusterId  cid)
+DistanceType computeClusterRadius(const ClusterSet& cs,
+                                  const ClusterId  cid)
 {
-    Distance maxDist(0);
+    DistanceType maxDist(0);
 
     const Point& centroid = cs.getCentroid(cid);
     // For earch PointId in this set
     BOOST_FOREACH(const PointIdSet::value_type pid, cs.pointsInCluster(cid))
     {
         const Point& pt = cs.point(pid);
-        Distance dist = centroid.distanceTo(pt);
+        DistanceType dist = centroid.distanceTo(pt);
 
         maxDist = std::max(maxDist, dist);
     }
@@ -215,7 +216,8 @@ void computeClusterBondary(const ClusterSet&    cs,
         fprintf(stdout, "Compute Bondary: clusterId: %u, cluster:%ld, curve:%ld\n", cid, cluster.size(), curve.size());
     }
     if(!curveFileName.empty())                                                  
-    {                                                                           
+    { 
+        const bool bPrintBracket = false;
         FILE* f = fopen(curveFileName.c_str(), "wt");                           
         if(f)
         {
@@ -223,10 +225,10 @@ void computeClusterBondary(const ClusterSet&    cs,
             {
                 for(size_t i=0; i<curve.size(); i++)
                 {
-                    fprintf(f, "%s\n", curve[i]->toString().c_str());
+                    fprintf(f, "%s\n", curve[i]->toString(bPrintBracket).c_str());
                 }
                 // adds the first point to make the curve closed
-                fprintf(f, "%s\n", curve[0]->toString().c_str());
+                fprintf(f, "%s\n", curve[0]->toString(bPrintBracket).c_str());
             }
             fclose(f);
         }
@@ -327,9 +329,9 @@ double computeSilhouette(const ClusterSet& cs,
     
     const ClusterId cid = cs.clusterContainingPoint(pid);
     
-    Distance a_i = computeAverageDistance(cs, pid, cid);
+    DistanceType a_i = computeAverageDistance(cs, pid, cid);
     
-    Distance b_i = 1e9;
+    DistanceType b_i = 1e9;
     for(size_t other_cid=0; other_cid<cs.nbCluster(); other_cid++)
     {
         if(other_cid != cid)
@@ -358,14 +360,14 @@ double computeAverageSilouette(const ClusterSet& cs,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Distance computeAverageDistance(const ClusterSet& cs,
+DistanceType computeAverageDistance(const ClusterSet& cs,
                                 const PointId&   pid,
                                 const ClusterId  to_cid)
 {
     ClusterId pt_cid = cs.clusterContainingPoint(pid);
     
     bool sameCluster = (to_cid == pt_cid);
-    Distance   dist = 0.0;
+    DistanceType   dist = 0.0;
     size_t iNb  = 0;
     
     const PointIdSet&  pointsInSet = cs.pointsInCluster(to_cid);
@@ -393,7 +395,7 @@ double computeEnergy(const DataSet&    ds,
                      const PointIdSet& clusterSet,
                      const Point&      centroid)
 {
-    Distance dist = 0.0;
+    DistanceType dist = 0.0;
     size_t iNb = 0;
     for(PointIdSet::iterator it = clusterSet.begin(); it != clusterSet.end(); it++)
     {
@@ -416,23 +418,23 @@ void printClusterSynopsis(const ClusterSet& cs)
     {
         const Point& centroid = cs.getCentroid(cid);
         const size_t nbPoints = cs.clusterSize(cid);
-         std::cout << "cluster: "       << cid                     << " "
-                   << "size: "          << nbPoints                << " "
-                   << "centroid: "      << centroid                << " "
-                   << "center: "        << cs.getClusterCenter(cid)   << " "
-                   << "radius: "        << computeClusterRadius(cs, cid)      << " "
-                   << "meanSilouette: " << computeAverageSilouette(cs, cid)
-                   << std::endl;
+        
+        fprintf(stdout, 
+            "cluster: %d, size: %4ld, centroid: %s, center: %s, radius: %10.2f, meanSilouette:%f\n",
+                    cid, nbPoints, 
+                    centroid.toString().c_str(), 
+                    cs.getClusterCenter(cid).toString().c_str(), 
+                    computeClusterRadius(cs, cid),
+                    computeAverageSilouette(cs, cid));
     }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void computeKMeans(ClusterSet& cs)
+void computeKMeans(ClusterSet& cs, const size_t maxIter, const bool bPrintIteration)
 {
-    bool bPrintIteration = false;
     bool bPrintSynodsis  = true;
-    
+   
     const size_t nbCluster = cs.nbCluster( );
     
     //
@@ -449,43 +451,45 @@ void computeKMeans(ClusterSet& cs)
         printClusterSynopsis(cs);
     }
     
-    unsigned int iter = 0;
+    size_t iter = 0;
     bool some_point_is_moving = true;
+    
+    // the K-Mean Loop
     while(some_point_is_moving)
     {
         some_point_is_moving = false;
-        cs.compute_centroids( );
+        size_t nbMove  = 0;
         
+        cs.compute_centroids( );
         if(bPrintIteration)
         {
-            std::cout << std::endl;
-            std::cout << "*** Iterations " << iter  << std::endl;
-            std::cout << "    Centroids:" << std::endl;
+            fprintf(stdout, "\n");
+            fprintf(stdout, "*** Iterations %ld\n", iter);
             for(size_t cid=0; cid<nbCluster; cid++)
             {
-                std::cout << "     * " << cid << " " << cs.getCentroid(cid) << std::endl;
+                fprintf(stdout, "    * cluster [%ld] size: %4ld, radius: %10.2f, centroid: %s, center: %s\n", 
+                        cid, cs.clusterSize(cid), computeClusterRadius(cs, cid), cs.getCentroid(cid).toString().c_str(), cs.getClusterCenter(cid).toString().c_str());
             }
         }
+                   
         // for each point
         for(size_t pid=0; pid<cs.nbPoints(); pid++)
         {
-            const Point&   p            = cs.point(pid);
-            const Point&   p_centroid   = cs.getCentroidOfPoint(p.getId());
+            const Point&   p             = cs.point(pid);
+            const Point&   p_centroid    = cs.getCentroidOfPoint(p.getId());
+            bool           moveThisPoint = false;
+            
             
             // distance point pid to its centroid
-            const Distance distPointToCentroid = p_centroid.distanceTo(p);
+            const DistanceType distPointToCentroid = p_centroid.distanceTo(p);
             
-            //std::cout   << "pid:"       << pid
-            //            << ", cluster:" << clusterContainingPoint(pid)
-            //            << ", dist:"    << distPointToCentroid
-            //            << std::endl;
+            // fprintf(stdout, "pid: %ld %s distance to centroid %g\n", pid, p.toString().c_str(), distPointToCentroid);
             
             // foreach centroid, find the closest centroid
-            Distance minDistance = distPointToCentroid;
+            DistanceType minDistance = distPointToCentroid;
             
             ClusterId to_cluster = 0;
-            size_t    nbMove     = 0;
-            
+    
             //std::cout << "****** " << pid << " " << p.getId() << "\n";
             
             for(size_t cid=0; cid<nbCluster; cid++)
@@ -496,32 +500,36 @@ void computeKMeans(ClusterSet& cs)
                 if(centroid.getId() == p_centroid.getId()) continue;
                 
                 // distance from point to a centroid
-                const Distance distPointToOtherCentroid = p.distanceTo(centroid);
+                const DistanceType distPointToOtherCentroid = p.distanceTo(centroid);
                 
                 //std::cout << "pid: " << pid << ", cid: " << cid  << ", distToCent: " << distPointToCentroid << " " << distPointToOtherCentroid <<  " : "  << (distPointToOtherCentroid<distPointToCentroid) << "\n";
                 if(distPointToOtherCentroid < distPointToCentroid)
                 {
                     minDistance = distPointToOtherCentroid;
-                    nbMove++;
                     to_cluster = cid;
+                    moveThisPoint = true;
                 }
             }
             // move towards a closer centroid
-            if(nbMove>0)
+            if(moveThisPoint>0)
             {
                 // remove point from its current cluster
                 cs.removePointFromCluster(p);
-                some_point_is_moving = true;
-                
                 if(bPrintIteration)
                 {
-                    std::cout << " Moving " << nbMove << " points\n";
+                    // std::cout << " Moving " << nbMove << " points\n";
                 }
                 cs.addPointToCluster(p, to_cluster);
                 some_point_is_moving = true;
+                nbMove++;
                 // std::cout << "\t\tmove to cluster:" << to_cluster << std::endl;
             }
         }
+        if(bPrintIteration)
+        {
+            fprintf(stdout, "     > Moving points %ld", nbMove);
+        }
+        
         if(0 && bPrintIteration)
         {
             // print cluster table
@@ -537,7 +545,7 @@ void computeKMeans(ClusterSet& cs)
         }
         iter++;
         
-        if(iter > 1000) break;
+        if(iter > maxIter) break;
     } // end while (some_point_is_moving)
     
     if(bPrintSynodsis)

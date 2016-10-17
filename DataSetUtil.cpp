@@ -4,6 +4,21 @@
 #include "Random.h"
 #include "DataSetUtil.h"
 
+std::string toString(const std::vector<double>& lst)
+{
+    std::string s;
+    char buffer[1024];
+    
+    s += "(";
+    for(size_t i=0; i<lst.size(); i++)
+    {
+        snprintf(buffer, sizeof(buffer), "%g ", lst[i]);
+        s += buffer;
+    }
+    s += ")";
+    return s;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Init collection of points
 void initRandomPoints(DataSet&     ds,
@@ -86,10 +101,9 @@ void createRandomDataSet(std::vector<Point*>& pointList,
                 char sBuffer[1024];
                 for(size_t i=0; i<centroid.size(); i++)
                 {
-                    snprintf(sBuffer, sizeof(sBuffer), "%10g ", centroid[i]);
-                    std::cout << sBuffer;
+                    fprintf(stdout, "%s ", toString(centroid[i]).c_str());
                 }
-                std::cout << std::endl;
+                fprintf(stdout, "\n");
             }
             // pick points around the centroid.
             switch(clusterType)

@@ -27,12 +27,16 @@ struct CommandLineOptions
         m_knn      = 4;
         m_verbose  = false;
         m_outfile  = "data";
+        m_maxIter  = 10;
+        m_seed     = 45;
     }
     std::string m_dsfname;
     std::string m_outfile;
     Command     m_command;
     double      m_eps;
     size_t      m_knn;
+    size_t      m_seed;
+    size_t      m_maxIter;
     size_t      m_minpts;
     bool        m_verbose;
 };
@@ -52,6 +56,8 @@ bool parseCommandLine(CommandLineOptions& options, const int argc, const char** 
 
         fprintf(stdout, "   -knn-test               # run K-Mean test\n");
         fprintf(stdout, "   -dbscan-test            # run DBScan test\n");
+        fprintf(stdout, "   -max-iter               # max nb iter (K-mean\n");
+        fprintf(stdout, "   -seed <value>           # seed value for random generator\n");
         return true;
     }
     for(CommandLine arg(argc,argv); !arg.end();  )
@@ -85,6 +91,10 @@ bool parseCommandLine(CommandLineOptions& options, const int argc, const char** 
         {
             options.m_outfile = arg.next();
         }
+        else if(key == "-max-iter")
+        {
+            options.m_maxIter = arg.nextInt();
+        }
         else if(key == "-knn-test")
         {
             options.m_command = Command_KNNTest;
@@ -92,6 +102,10 @@ bool parseCommandLine(CommandLineOptions& options, const int argc, const char** 
         else if(key == "dbdcan-test")
         {
             options.m_command = Command_DBSCANTest;
+        }
+        else if(key == "-seed")
+        {
+            options.m_seed = arg.nextInt();
         }
     }
     return true;
@@ -109,10 +123,23 @@ int main(const int argc, const char** argv)
     {
         // opens te ds file
         bOk = ds.read(options.m_dsfname);
-        fprintf(stdout, "* Open Data set '%s'\n", options.m_dsfname.c_str());
+        fprintf(stdout, "* Data set '%s'\n", options.m_dsfname.c_str());
+        fprintf(stdout, "  Size     %ld\n", ds.size());
+        fprintf(stdout, "  Dim      %ld\n", ds.dim());
     }
     if(bOk)
     {
+        if(options.m_seed == 0)
+        {
+            size_t new_seed = time(NULL);
+             srand(new_seed);
+             fprintf(stdout, "Using random seed: %ld\n", new_seed);
+        }
+        else
+        {
+            srand(options.m_seed);
+        }
+        
         switch(options.m_command)
         {
             case Command_None:
@@ -127,9 +154,18 @@ int main(const int argc, const char** argv)
                 break;
             case Command_KNN:
             {
-                fprintf(stdout, "computing knn: %s\n", options.m_outfile.c_str());
+                fprintf(stdout, "computing xx knn: %s\n", options.m_outfile.c_str());
+                     /*
                      std::vector<DistPair> dist;
-                     KMean(ds, options.m_knn, dist, options.m_outfile);
+                     KMean(ds, 
+                           options.m_knn, 
+                           dist, 
+                           options.m_outfile,
+                           options.m_verbose);
+                     */      
+                           
+                computeKMeans(ds, options.m_knn, "cluster", options.m_maxIter, options.m_verbose);
+                break;
             }
             break;
             case Command_KNNTest:
